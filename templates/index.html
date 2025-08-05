@@ -69,9 +69,40 @@
             transition: border-color 0.3s ease;
         }
         
-        textarea:focus {
+        input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
+        }
+        
+        .input-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
         }
         
         .button {
@@ -140,32 +171,48 @@
         <div class="header">
             <h1>🤖 Notion for DS</h1>
             <p>Store messages in your Notion database</p>
+            <div style="margin-top: 1rem;">
+                <a href="/admin" style="color: #667eea; text-decoration: none; font-size: 0.9rem;">🔧 Admin Panel</a>
+            </div>
         </div>
         
         <div id="status" class="status">
             Checking connection...
         </div>
         
-        <form id="messageForm">
+        <div class="input-section">
             <div class="form-group">
-                <label for="message">Message to store:</label>
-                <textarea 
-                    id="message" 
-                    name="message" 
-                    placeholder="Enter your message here..."
-                    required
-                ></textarea>
+                <label for="digitInput">Enter 4-digit sequence:</label>
+                <input 
+                    type="text" 
+                    id="digitInput" 
+                    name="digitInput" 
+                    placeholder="Enter 4 digits..."
+                    maxlength="4"
+                    pattern="[0-9]{4}"
+                    autocomplete="off"
+                />
             </div>
             
-            <button type="submit" class="button" id="submitBtn">
-                Store in Notion Database
-            </button>
-        </form>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Sent:</span>
+                    <span class="stat-value" id="sentCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Last:</span>
+                    <span class="stat-value" id="lastSent">-</span>
+                </div>
+            </div>
+        </div>
         
         <div id="result" class="result"></div>
     </div>
 
     <script>
+        let sentCount = 0;
+        let isProcessing = false;
+        
         // Check connection status
         async function checkStatus() {
             try {
@@ -186,22 +233,44 @@
             }
         }
         
-        // Handle form submission
-        document.getElementById('messageForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Handle digit input
+        document.getElementById('digitInput').addEventListener('input', async (e) => {
+            const input = e.target;
+            const value = input.value.replace(/\D/g, ''); // Only allow digits
             
-            const message = document.getElementById('message').value.trim();
-            const submitBtn = document.getElementById('submitBtn');
-            const resultDiv = document.getElementById('result');
+            // Update input with only digits
+            input.value = value;
             
-            if (!message) {
-                showResult('Please enter a message', 'error');
+            // Check if we have exactly 4 digits
+            if (value.length === 4 && !isProcessing) {
+                await sendToNotion(value);
+            }
+        });
+        
+        // Handle key events for faster input
+        document.getElementById('digitInput').addEventListener('keydown', (e) => {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+                // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                (e.keyCode === 67 && e.ctrlKey === true) ||
+                (e.keyCode === 86 && e.ctrlKey === true) ||
+                (e.keyCode === 88 && e.ctrlKey === true)) {
                 return;
             }
             
-            // Disable button and show loading
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Storing...';
+            // Ensure that it is a number and stop the keypress
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) &&
+                (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        });
+        
+        async function sendToNotion(digits) {
+            if (isProcessing) return;
+            
+            isProcessing = true;
+            const input = document.getElementById('digitInput');
             
             try {
                 const response = await fetch('/store', {
@@ -209,37 +278,51 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({ message: digits })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    showResult(`✅ ${data.message}`, 'success');
-                    document.getElementById('message').value = '';
+                    // Update stats
+                    sentCount++;
+                    document.getElementById('sentCount').textContent = sentCount;
+                    document.getElementById('lastSent').textContent = digits;
+                    
+                    // Clear input and focus for next entry
+                    input.value = '';
+                    input.focus();
+                    
+                    // Show brief success indicator
+                    showQuickResult('✅ Sent', 'success');
                 } else {
-                    showResult(`❌ Error: ${data.error}`, 'error');
+                    showQuickResult(`❌ ${data.error}`, 'error');
+                    input.focus();
                 }
             } catch (error) {
-                showResult(`❌ Network error: ${error.message}`, 'error');
+                showQuickResult('❌ Network error', 'error');
+                input.focus();
             } finally {
-                // Re-enable button
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Store in Notion Database';
+                isProcessing = false;
             }
-        });
+        }
         
-        function showResult(message, type) {
+        function showQuickResult(message, type) {
             const resultDiv = document.getElementById('result');
             resultDiv.textContent = message;
             resultDiv.className = `result ${type}`;
             resultDiv.style.display = 'block';
             
-            // Auto-hide after 5 seconds
+            // Auto-hide after 1 second for quick feedback
             setTimeout(() => {
                 resultDiv.style.display = 'none';
-            }, 5000);
+            }, 1000);
         }
+        
+        // Focus input on page load
+        window.addEventListener('load', () => {
+            document.getElementById('digitInput').focus();
+        });
         
         // Check status on page load
         checkStatus();
