@@ -5,25 +5,47 @@ Notion for DS - A simple program to write messages to Notion pages
 
 import os
 import sys
+import json
 from dotenv import load_dotenv
 from notion_client import Client
 
 def load_environment():
-    """Load environment variables from .env file"""
+    """Load environment variables from .env file or GitHub secrets"""
     load_dotenv()
     
-    # Check for required environment variables
+    # Check for GitHub secret first
+    notion_api_secret = os.getenv('NOTION_API')
+    
+    if notion_api_secret:
+        try:
+            # Parse the JSON secret
+            secret_data = json.loads(notion_api_secret)
+            notion_token = secret_data.get('token')
+            page_id = secret_data.get('page_id')
+            
+            if not notion_token or not page_id:
+                print("Error: NOTION_API secret must contain 'token' and 'page_id'")
+                sys.exit(1)
+                
+            return notion_token, page_id
+        except json.JSONDecodeError:
+            print("Error: NOTION_API secret must be valid JSON")
+            sys.exit(1)
+    
+    # Fallback to individual environment variables
     notion_token = os.getenv('NOTION_TOKEN')
     page_id = os.getenv('NOTION_PAGE_ID')
     
     if not notion_token:
         print("Error: NOTION_TOKEN not found in environment variables")
         print("Please create a .env file with your Notion integration token")
+        print("Or set up NOTION_API GitHub secret with token and page_id")
         sys.exit(1)
         
     if not page_id:
         print("Error: NOTION_PAGE_ID not found in environment variables")
         print("Please create a .env file with your Notion page ID")
+        print("Or set up NOTION_API GitHub secret with token and page_id")
         sys.exit(1)
         
     return notion_token, page_id

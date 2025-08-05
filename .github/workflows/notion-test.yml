@@ -1,0 +1,33 @@
+name: Test Notion Integration
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-notion:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Test Notion integration
+      env:
+        NOTION_API: ${{ secrets.NOTION_API }}
+      run: |
+        echo "Testing Notion integration..."
+        echo "yes" | python main.py 
