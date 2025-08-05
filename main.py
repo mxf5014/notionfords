@@ -16,7 +16,11 @@ def load_environment():
     # Check for GitHub secret first
     notion_api_secret = os.getenv('NOTION_API')
     
+    print(f"🔍 Checking for NOTION_API secret...")
+    print(f"NOTION_API found: {'Yes' if notion_api_secret else 'No'}")
+    
     if notion_api_secret:
+        print(f"NOTION_API length: {len(notion_api_secret)}")
         try:
             # Parse the JSON secret
             secret_data = json.loads(notion_api_secret)
@@ -25,11 +29,14 @@ def load_environment():
             
             if not notion_token or not page_id:
                 print("Error: NOTION_API secret must contain 'token' and 'page_id'")
+                print(f"Available keys: {list(secret_data.keys())}")
                 sys.exit(1)
                 
+            print("✅ Successfully parsed NOTION_API secret")
             return notion_token, page_id
-        except json.JSONDecodeError:
-            print("Error: NOTION_API secret must be valid JSON")
+        except json.JSONDecodeError as e:
+            print(f"Error: NOTION_API secret must be valid JSON: {e}")
+            print(f"Secret preview: {notion_api_secret[:100]}...")
             sys.exit(1)
     
     # Fallback to individual environment variables
