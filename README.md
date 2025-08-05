@@ -1,6 +1,6 @@
 # Notion for DS
 
-A simple Python program that allows you to write messages to Notion pages through the Notion API.
+A simple Python program that allows you to store messages in Notion databases through the Notion API.
 
 ## Features
 
@@ -11,11 +11,26 @@ A simple Python program that allows you to write messages to Notion pages throug
 
 ## Setup
 
-### 1. Install Dependencies
+### Option A: Standard Python (pip)
 
 ```bash
 pip install -r requirements.txt
 ```
+
+### Option B: Anaconda (Recommended)
+
+1. **Quick Setup**:
+   ```bash
+   python setup-conda.py
+   ```
+   This will create the conda environment and set up your credentials.
+
+2. **Manual Setup**:
+   ```bash
+   conda env create -f environment.yml
+   conda activate notionfords
+   python setup-local.py
+   ```
 
 ### 2. Set up Notion Integration
 
@@ -23,12 +38,13 @@ pip install -r requirements.txt
 2. Create a new integration
 3. Copy the integration token
 
-### 3. Get Your Notion Page ID
+### 3. Create a Notion Database
 
-1. Open the Notion page where you want to write messages
-2. Copy the page ID from the URL:
-   - URL format: `https://www.notion.so/Your-Page-Title-1234567890abcdef1234567890abcdef`
-   - Page ID: `1234567890abcdef1234567890abcdef`
+1. Create a new database in Notion
+2. Add a "Title" property called "Message" (this is where your strings will be stored)
+3. Copy the database ID from the URL:
+   - URL format: `https://www.notion.so/Your-Workspace/1234567890abcdef1234567890abcdef?v=...`
+   - Database ID: `1234567890abcdef1234567890abcdef`
 
 ### 4. Configure Environment Variables
 
@@ -58,27 +74,42 @@ pip install -r requirements.txt
    }
    ```
 
-### 5. Share Your Page with the Integration
+### 5. Share Your Database with the Integration
 
-1. Open your Notion page
+1. Open your Notion database
 2. Click "Share" in the top right
 3. Click "Invite" and search for your integration name
-4. Add the integration to the page
+4. Add the integration to the database
 
 ## Usage
 
 ### Local Development
 
-Run the program:
+For local development, you need to set up a `.env` file:
 
-```bash
-python main.py
-```
+1. **Quick Setup** (recommended):
+   ```bash
+   python setup-local.py
+   ```
+   This will prompt you for your credentials and create the `.env` file automatically.
+
+2. **Manual Setup**:
+   ```bash
+   cp env.example .env
+   # Edit .env with your actual credentials
+   ```
+
+3. **Run the program**:
+   ```bash
+   python main.py
+   ```
 
 The program will:
 1. Ask "Do you want to write?"
-2. If you answer "yes", it will write "this is a test message" to your Notion page
+2. If you answer "yes", it will store "this is a test message" in your Notion database
 3. Provide feedback on success or failure
+
+**Note**: GitHub secrets only work in GitHub Actions workflows, not in your local terminal.
 
 ### GitHub Actions
 
@@ -100,8 +131,9 @@ To trigger the workflow manually:
 🤖 Welcome to Notion for DS!
 ========================================
 Do you want to write? (yes/no): yes
-📝 Writing test message to Notion page...
-✅ Successfully wrote message to Notion page!
+📝 Storing test message in Notion database...
+✅ Successfully stored message in Notion database!
+Page ID: 1234567890abcdef1234567890abcdef
 ```
 
 ## Requirements

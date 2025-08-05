@@ -1,0 +1,11 @@
+name: notionfords
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - notion-client==2.2.1
+    - python-dotenv==1.0.0
+    - flask==2.3.3 
